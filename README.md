@@ -1,4 +1,4 @@
-# CloudResume — Resume Builder & Portfolio
+# CloudResume — Resume Builder
 
 > A lightweight, cloud-native resume builder with AWS integration. Build, store, and share professional resumes with S3 storage, RDS database, and serverless deployment options.
 
@@ -476,4 +476,5 @@ eb deploy
 - **Use RDS Aurora Serverless** for variable traffic (scales to zero)
 
 ---
+
 
