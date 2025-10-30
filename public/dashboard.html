@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Resume Builder - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">CloudResume</div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="builder.html">Builder</a></li>
+                <li><a href="auth.html">Login</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div id="dashboard" class="page-section active">
+        <section class="dashboard">
+            <div class="container">
+                <div class="dashboard-header">
+                    <h1>My Resumes</h1>
+                    <p>Manage and create professional resumes</p>
+                </div>
+
+                <form id="uploadResumeForm" enctype="multipart/form-data" style="margin-bottom: 2rem;">
+                    <input type="file" name="resume" id="resumeFile" accept="application/pdf" required />
+                    <button type="submit" class="btn btn-primary">Save Resume</button>
+                </form>
+                <div class="resume-grid" id="resumeGrid">
+                    <!-- Resumes will be loaded here -->
+                </div>
+            </div>
+        </section>
+    </div>
+    <script src="scripts.js"></script>
+</body>
+</html>
