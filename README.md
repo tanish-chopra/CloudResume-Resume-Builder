@@ -1,316 +1,479 @@
-CloudResume — Resume Builder & AWS‑deployable
+# CloudResume — Resume Builder & Portfolio
 
-CloudResume is a lightweight, browser-first resume builder that combines an interactive resume editor with a deployable static site and a SQL-backed visitor counter. Create, preview, and export resume pages in the browser; host the result on AWS S3 and use AWS Lambda (or a small server) with Amazon RDS/Aurora to persist visit counts.
+> A lightweight, cloud-native resume builder with AWS integration. Build, store, and share professional resumes with S3 storage, RDS database, and serverless deployment options.
 
+CloudResume is a full-stack resume builder application that enables users to create, upload, and manage resume PDFs through a browser-based interface. The backend stores resumes securely in AWS S3 and maintains metadata in a MySQL database (RDS), while the frontend provides an intuitive builder interface with authentication.
 
-## Key features
-- Upload resume PDFs and save to S3
-- Generate pre-signed S3 URLs for secure downloads
-- Basic signup / login endpoints backed by MySQL
-- Simple static frontend served from `public` folder
+## ✨ Features
 
-## Quick facts
-- Start command: `npm start` (runs `node server.js`)
-- Main file: `server.js`
-- Procfile: `web: node server.js` (useful for Heroku / Elastic Beanstalk)
-- Dependencies: Express, Multer, mysql2, AWS SDK v3, dotenv, cors
+- **Resume Upload & Storage** — Upload resume PDFs directly to AWS S3 with automatic metadata tracking
+- **Secure Download URLs** — Generate pre-signed S3 URLs for time-limited, secure resume downloads
+- **User Authentication** — Email/password signup and login backed by MySQL
+- **Resume Builder UI** — Interactive browser-based resume editor with live preview
+- **Cloud-Native Architecture** — Built for AWS Elastic Beanstalk, S3, and RDS deployment
 
-## Prerequisites
-- Node.js (16+ recommended)
-- npm
-- An AWS S3 bucket and credentials (or IAM role)
-- A MySQL database (RDS or local)
+## 🚀 Tech Stack
 
-## Environment variables (.env)
-Create a `.env` file in the project root and add the following values (do NOT commit `.env`):
+- **Backend:** Node.js, Express.js
+- **Database:** MySQL (AWS RDS)
+- **Storage:** AWS S3
+- **Key Libraries:** Multer (file upload), AWS SDK v3, mysql2, dotenv, cors
+- **Deployment:** Elastic Beanstalk, Heroku (via Procfile)
 
-```
+## 📋 Prerequisites
+
+Before you begin, ensure you have:
+
+- **Node.js** (v16+ recommended) and npm
+- **AWS Account** with:
+  - An S3 bucket for resume storage
+  - IAM credentials (or IAM role for EC2/EB instances)
+- **MySQL Database** (AWS RDS or local instance)
+- **Environment Variables** configured (see below)
+
+## ⚙️ Environment Setup
+
+Create a `.env` file in the project root with the following variables:
+
+```bash
+# Server Configuration
 PORT=8081
 CORS_ORIGIN=
-AWS_REGION=your-aws-region
+
+# AWS Configuration
+AWS_REGION=ap-south-1
 AWS_BUCKET_NAME=your-bucket-name
 AWS_ACCESS_KEY_ID=your-access-key-id
 AWS_SECRET_ACCESS_KEY=your-secret-access-key
-# DB values prefer using env vars rather than hardcoding in server.js
+
+# Database Configuration (MySQL/RDS)
 DB_HOST=your-db-host
 DB_USER=your-db-user
 DB_PASSWORD=your-db-password
 DB_NAME=your-db-name
 ```
 
-Note: `server.js` in this repo currently contains a MySQL connection object; replace hard-coded values with env vars for security.
+> **⚠️ Security Note:** Never commit `.env` files to version control. Add `.env` to your `.gitignore` file.
 
-## Install and run locally
-1. Install dependencies
+## 🔧 Installation & Local Development
 
-```powershell
-npm install
-```
+1. **Clone the repository**
+   ```powershell
+   git clone https://github.com/yourusername/cloudresume.git
+   cd cloudresume
+   ```
 
-2. Create `.env` with the variables above.
+2. **Install dependencies**
+   ```powershell
+   npm install
+   ```
 
-3. Run the app
+3. **Configure environment variables**
+   - Create a `.env` file with the variables listed above
+   - Replace placeholder values with your actual AWS and database credentials
 
-```powershell
-npm start
-```
+4. **Set up the database**
+   - Run the SQL schema (see [Database Schema](#database-schema) section below)
 
-The server listens on `PORT` (default 8081).
+5. **Start the development server**
+   ```powershell
+   npm start
+   ```
 
-## API endpoints (overview)
-- `GET /` — serves `public/index.html` if present
-- `GET /test-db` — runs a simple DB query to test MySQL connectivity
-- `POST /signup` — body: `{ email, password }` — creates a user
-- `POST /login` — body: `{ email, password }` — authenticates a user
-- `GET /resumes?userId=<id>` — lists resumes for a user and returns pre-signed download URLs
-- `POST /upload-resume` — form-data: `resume` file + `userId` — upload a resume to S3
-- `POST /save-resume-from-builder` — form-data: `resumePdf` + `userId` + `resumeData` — saves builder-generated PDF with metadata
+6. **Access the application**
+   - Open your browser to `http://localhost:8081`
 
-For implementation details, see `server.js`.
+## 📊 Database Schema
 
-## Database schema (example)
-Run these SQL statements to create the required tables:
+Run these SQL statements to create the required tables in your MySQL database:
 
 ```sql
+-- Users table
 CREATE TABLE users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   email VARCHAR(255) NOT NULL UNIQUE,
-  password VARCHAR(255) NOT NULL
+  password VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Resumes table
 CREATE TABLE resumes (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
   file_name VARCHAR(255) NOT NULL,
   s3_key VARCHAR(255) NOT NULL,
   uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 ```
 
-## AWS / Deployment notes
-- This project is prepared for deployment to services like Elastic Beanstalk or Heroku (see `Procfile`).
-- See `AWS_SETUP.md` and `DEPLOYMENT_GUIDE.md` for step-by-step S3 and Elastic Beanstalk instructions.
-- In production, prefer IAM roles for S3 access and never store access keys in source control.
+## ☁️ AWS Deployment
 
-## Security
-- Do not commit `.env`; add it to `.gitignore`.
-- Replace any hard-coded credentials in `server.js` with env variables.
-- Restrict S3 bucket access via IAM and bucket policies.
+This application is designed for deployment on AWS using the following services:
 
-## Suggested next steps
-- Add a `.gitignore` (include `node_modules/` and `.env`).
-- Add basic tests for endpoints (supertest + jest or similar).
-- Add CI (GitHub Actions) and linting.
+### Architecture Overview
 
-## License & author
-Add your name and license here (e.g., MIT).
+- **Elastic Beanstalk** — Application hosting and management
+- **S3** — Resume PDF storage with pre-signed URL downloads
+- **RDS (MySQL)** — User and resume metadata persistence
+- **IAM** — Secure credential and permission management
+
+### Quick Deployment Steps
+
+1. **Prepare AWS Resources**
+   - Create an S3 bucket for resume storage
+   - Launch an RDS MySQL instance
+   - Create an IAM user with S3 access (or use instance roles)
+
+2. **Deploy to Elastic Beanstalk**
+   ```powershell
+   # Initialize EB application
+   eb init
+   
+   # Create environment and deploy
+   eb create cloudresume-env
+   
+   # Open the deployed application
+   eb open
+   ```
+
+3. **Configure Environment Variables**
+   - Set variables in EB Console: **Configuration → Software → Environment properties**
+   - Or use the CLI:
+     ```powershell
+     eb setenv AWS_REGION=ap-south-1 AWS_BUCKET_NAME=your-bucket DB_HOST=your-rds-endpoint DB_USER=admin DB_PASSWORD=yourpassword DB_NAME=cloudresume
+     ```
+
+4. **Configure Security Groups**
+   - Allow EB instances to access RDS (inbound port 3306 from EB security group)
+   - Restrict S3 bucket access via IAM policies
+
+For detailed deployment instructions, see the **[AWS Deployment Guide](#aws-deployment-guide-detailed)** section below.
 
 ---
-If you want, I can also: add a `.gitignore`, open a PR adding the README to your repo, or create a condensed README tailored for GitHub's top-of-repo display. Which would you like next?
 
-## AWS S3 Setup Instructions
+## 🔒 Security Best Practices
 
-### Prerequisites
-1. Create an AWS account if you don't have one
-2. Create an S3 bucket for storing resumes
+- ✅ **Never commit credentials** — Add `.env`, `.ebextensions/01_env.config` with real secrets to `.gitignore`
+- ✅ **Use IAM roles** — Prefer instance profiles over hardcoded access keys in production
+- ✅ **Rotate credentials regularly** — Especially if accidentally exposed
+- ✅ **Use Secrets Manager** — Store DB passwords and API keys in AWS Secrets Manager
+- ✅ **Enable HTTPS** — Use ACM certificates and enforce SSL/TLS
+- ✅ **Restrict S3 access** — Use bucket policies and private buckets with pre-signed URLs
+- ✅ **Validate input** — Sanitize user inputs to prevent SQL injection
 
-### Steps to configure AWS S3:
+---
 
-#### 1. Create S3 Bucket
-1. Go to AWS S3 Console
-2. Click "Create bucket"
-3. Choose a unique bucket name (e.g., "my-resume-builder-bucket")
-4. Select your preferred region
-5. Keep default settings and create the bucket
-
-#### 2. Create IAM User
-1. Go to AWS IAM Console
-2. Click "Users" → "Create user"
-3. Enter username (e.g., "resume-builder-user")
-4. Click "Next"
-5. Choose "Attach policies directly"
-6. Search and select "AmazonS3FullAccess" (or create a custom policy for specific bucket access)
-7. Click "Next" and "Create user"
-
-#### 3. Create Access Keys
-1. Click on the created user
-2. Go to "Security credentials" tab
-3. Click "Create access key"
-4. Choose "Application running outside AWS"
-5. Click "Next" and "Create access key"
-6. **IMPORTANT**: Copy the Access Key ID and Secret Access Key
-
-#### 4. Update .env file
-Replace the placeholder values in `.env` file with your actual AWS credentials:
+## 📁 Project Structure
 
 ```
-AWS_REGION=us-east-1                    # Your bucket region
-AWS_BUCKET_NAME=my-resume-builder-bucket # Your bucket name
-AWS_ACCESS_KEY_ID=YOUR_ACCESS_KEY_HERE   # From IAM user
-AWS_SECRET_ACCESS_KEY=YOUR_SECRET_KEY_HERE # From IAM user
+cloudresume/
+├── .ebextensions/           # Elastic Beanstalk configuration files
+│   └── 01_env.config.example  # Environment variables template (safe to commit)
+├── public/                  # Static frontend files
+│   ├── index.html           # Landing page
+│   ├── auth.html            # Login/signup page
+│   ├── builder.html         # Resume builder interface
+│   ├── dashboard.html       # User dashboard
+│   ├── scripts.js           # Frontend JavaScript
+│   └── styles.css           # Styling
+├── server.js                # Main Express server
+├── package.json             # Node.js dependencies
+├── Procfile                 # Process file for Heroku/EB deployment
+├── .env                     # Local environment variables (DO NOT COMMIT)
+├── .gitignore               # Git ignore rules
+└── README.md                # This file
 ```
 
-#### 5. Database Setup
-Make sure your MySQL database has the required table:
+---
 
-```sql
-CREATE TABLE resumes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    file_name VARCHAR(255) NOT NULL,
-    s3_key VARCHAR(255) NOT NULL,
-    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
+## 🛠️ Development Tips
+
+- **Testing DB Connection:** Visit `/test-db` endpoint to verify MySQL connectivity
+- **Local S3 Testing:** Use LocalStack or Minio for local S3 simulation
+- **Debugging:** Check `server.js` console logs and EB logs via `eb logs`
+- **Hot Reload:** Use `nodemon` for auto-restart during development:
+  ```powershell
+  npm install -g nodemon
+  nodemon server.js
+  ```
+
+---
+
+## 📚 Additional Resources
+
+- **AWS Documentation:**
+  - [Elastic Beanstalk Guide](https://docs.aws.amazon.com/elasticbeanstalk/)
+  - [S3 Developer Guide](https://docs.aws.amazon.com/s3/)
+  - [RDS User Guide](https://docs.aws.amazon.com/rds/)
+- **Tools:**
+  - [EB CLI Installation](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3-install.html)
+  - [AWS SDK for JavaScript v3](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/)
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! To contribute:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
+
+---
+
+## 👤 Author
+
+**Your Name**  
+- GitHub: [@yourusername](https://github.com/yourusername)
+- LinkedIn: [Your Profile](https://linkedin.com/in/yourprofile)
+
+---
+
+## 🙏 Acknowledgments
+
+- AWS Free Tier for hosting resources
+- Express.js and Node.js communities
+- Open-source contributors
+
+---
+
+<div align="center">
+
+**⭐ Star this repo if you found it helpful!**
+
+</div>
+
+---
+
+## AWS Deployment Guide (Detailed)
+
+## AWS Deployment Guide (Detailed)
+
+This comprehensive guide walks you through deploying CloudResume to AWS using Elastic Beanstalk, S3, and RDS.
+
+### 1️⃣ AWS Services Overview
+
+| Service | Purpose |
+|---------|---------|
+| **Elastic Beanstalk** | Hosts and auto-scales the Node.js application |
+| **S3** | Stores uploaded resume PDFs securely |
+| **RDS (MySQL)** | Stores user accounts and resume metadata |
+| **IAM** | Manages access permissions and credentials |
+
+### 2️⃣ S3 Bucket Setup
+
+1. **Create S3 Bucket**
+   - Go to [AWS S3 Console](https://s3.console.aws.amazon.com/)
+   - Click **Create bucket**
+   - Enter a unique bucket name (e.g., `cloudresume-storage-2025`)
+   - Select your preferred region (e.g., `ap-south-1`)
+   - **Block all public access** (resumes will be accessed via pre-signed URLs)
+   - Click **Create bucket**
+
+2. **Create IAM User for S3 Access**
+   - Go to [IAM Console](https://console.aws.amazon.com/iam/)
+   - Navigate to **Users** → **Create user**
+   - Username: `cloudresume-s3-user`
+   - Select **Programmatic access**
+   - Attach policy: **AmazonS3FullAccess** (or create a custom policy for your specific bucket)
+   - Complete user creation and **save the Access Key ID and Secret Access Key**
+
+3. **Optional: Custom S3 Bucket Policy** (for fine-grained access)
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Effect": "Allow",
+         "Principal": {
+           "AWS": "arn:aws:iam::YOUR_ACCOUNT_ID:user/cloudresume-s3-user"
+         },
+         "Action": [
+           "s3:PutObject",
+           "s3:GetObject",
+           "s3:DeleteObject"
+         ],
+         "Resource": "arn:aws:s3:::your-bucket-name/*"
+       }
+     ]
+   }
+   ```
+
+### 3️⃣ RDS Database Setup
+
+1. **Create MySQL RDS Instance**
+   - Go to [RDS Console](https://console.aws.amazon.com/rds/)
+   - Click **Create database**
+   - Choose **MySQL** engine
+   - Template: **Free tier** (for testing) or **Production** (for live apps)
+   - Settings:
+     - DB instance identifier: `cloudresume-db`
+     - Master username: `admin`
+     - Master password: *Create a strong password*
+   - Instance configuration: `db.t3.micro` (free tier eligible)
+   - Storage: 20 GB SSD
+   - Connectivity:
+     - VPC: Default VPC
+     - Public access: **No** (for security)
+     - VPC security group: Create new or select existing
+   - Click **Create database**
+
+2. **Configure Security Group**
+   - Edit the RDS security group
+   - Add inbound rule:
+     - Type: **MySQL/Aurora**
+     - Port: **3306**
+     - Source: Security group of your Elastic Beanstalk environment
+
+3. **Initialize Database Schema**
+   - Use a MySQL client (MySQL Workbench, DBeaver, or CLI) to connect
+   - Run the SQL schema from the [Database Schema](#-database-schema) section above
+
+### 4️⃣ Elastic Beanstalk Deployment
+
+1. **Install EB CLI** (if not already installed)
+   ```powershell
+   pip install awsebcli --upgrade --user
+   ```
+
+2. **Initialize Elastic Beanstalk**
+   ```powershell
+   cd cloudresume
+   eb init
+   ```
+   - Select your region (e.g., `ap-south-1`)
+   - Create new application: `cloudresume`
+   - Platform: **Node.js**
+   - Platform branch: Latest Node.js version
+   - Use CodeCommit: **No**
+   - SSH: **Yes** (recommended for debugging)
+
+3. **Create Environment and Deploy**
+   ```powershell
+   eb create cloudresume-env
+   ```
+   - This command:
+     - Creates an environment
+     - Uploads your application
+     - Provisions resources (EC2, Load Balancer, etc.)
+     - Deploys the app
+
+4. **Set Environment Variables**
+   
+   **Option A: Via EB Console**
+   - Go to Elastic Beanstalk Console
+   - Select your environment
+   - Configuration → Software → Environment properties
+   - Add each variable:
+     ```
+     AWS_REGION = ap-south-1
+     AWS_BUCKET_NAME = your-bucket-name
+     AWS_ACCESS_KEY_ID = your-access-key
+     AWS_SECRET_ACCESS_KEY = your-secret-key
+     DB_HOST = your-rds-endpoint.rds.amazonaws.com
+     DB_USER = admin
+     DB_PASSWORD = your-db-password
+     DB_NAME = cloudresume
+     ```
+
+   **Option B: Via EB CLI**
+   ```powershell
+   eb setenv AWS_REGION=ap-south-1 AWS_BUCKET_NAME=your-bucket DB_HOST=your-rds-endpoint.rds.amazonaws.com DB_USER=admin DB_PASSWORD=yourpassword DB_NAME=cloudresume
+   ```
+
+5. **Open Your Application**
+   ```powershell
+   eb open
+   ```
+
+### 5️⃣ Security Configuration
+
+**Important Security Steps:**
+
+1. **Never commit credentials to Git**
+   - Add to `.gitignore`:
+     ```
+     .env
+     .ebextensions/01_env.config
+     node_modules/
+     ```
+
+2. **Use IAM Roles (Recommended for Production)**
+   - Instead of access keys, attach an IAM role to EB instances
+   - Create a role with `AmazonS3FullAccess` policy
+   - Attach to EB environment: Configuration → Security → IAM instance profile
+
+3. **Rotate Exposed Credentials**
+   - If you accidentally commit credentials:
+     - Delete the access key in IAM
+     - Change RDS password
+     - Purge secrets from Git history (use BFG Repo-Cleaner)
+
+4. **Enable HTTPS**
+   - Request an SSL certificate via AWS Certificate Manager (ACM)
+   - Configure your EB load balancer to use HTTPS
+
+### 6️⃣ Application Workflow
+
+```
+User → Browser → Elastic Beanstalk (Node.js) → S3 (Resume Storage)
+                            ↓
+                         RDS MySQL (User & Metadata)
 ```
 
-### Security Note
-- Never commit your `.env` file to version control
-- The `.env` file contains sensitive credentials
-- Consider using IAM roles instead of access keys for production
+- **Login/Signup:** Credentials validated against RDS
+- **Resume Upload:** File uploaded to S3, metadata saved to RDS
+- **Resume Download:** Pre-signed S3 URL generated for secure access
 
-## AWS Deployment Guide
+### 7️⃣ Troubleshooting
 
-This guide explains how to deploy your Node.js Resume Builder app using AWS services: Elastic Beanstalk, S3, and RDS. It covers all connections, including login, file upload, and database setup.
+| Issue | Solution |
+|-------|----------|
+| **Cannot connect to RDS** | Check security group allows inbound from EB security group on port 3306 |
+| **S3 upload fails** | Verify IAM user has S3 permissions; check bucket name and region |
+| **Application won't start** | Check EB logs: `eb logs` or view in EB Console |
+| **Environment variables not set** | Verify in EB Console → Configuration → Software |
 
-### 1. AWS Services Used
-- **Elastic Beanstalk**: Hosts and manages your Node.js application.
-- **S3**: Stores uploaded resume PDFs securely.
-- **RDS (MySQL)**: Stores user and resume metadata.
-- **IAM**: Manages credentials and permissions for S3 and RDS access.
+### 8️⃣ Monitoring & Logs
 
-### 2. Prerequisites
-- AWS account
-- Node.js project (this repo)
-- S3 bucket created for resumes
-- RDS MySQL instance created and accessible
-- IAM user with S3 access keys
-- SQL Workbench/J for database management
+- **View logs:**
+  ```powershell
+  eb logs
+  ```
+- **Monitor health:**
+  ```powershell
+  eb health
+  ```
+- **CloudWatch:** Set up alarms for CPU, memory, and request count
 
-### 3. Project Structure
-```
-├── .ebextensions/           # Elastic Beanstalk environment configs
-├── .env                    # Local environment variables (not uploaded)
-├── Procfile                # Tells EB how to start the app
-├── server.js               # Main Node.js backend
-├── scripts.js              # Frontend logic
-├── builder.html, ...       # Frontend pages
-├── package.json            # Node.js dependencies
-```
+### 9️⃣ Updating Your Application
 
-### 4. Database Setup (RDS)
-1. Create a MySQL RDS instance in AWS.
-2. Use SQL Workbench/J to connect and run:
+```powershell
+# Make changes to your code
+git add .
+git commit -m "Update feature"
 
-```sql
-CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL
-);
-
-CREATE TABLE resumes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    file_name VARCHAR(255) NOT NULL,
-    s3_key VARCHAR(255) NOT NULL,
-    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
-```
-3. Make sure the RDS security group allows inbound traffic from Elastic Beanstalk.
-
-### 5. S3 Setup
-1. Create an S3 bucket (e.g., `my-resume-bucket`).
-2. Create an IAM user with `AmazonS3FullAccess` or a custom policy for your bucket.
-3. Store the access key and secret key securely.
-4. Update your Elastic Beanstalk environment variables with these credentials.
-
-#### S3 Bucket Setup Instructions (short)
-1. Go to the AWS S3 Console and create a bucket with a unique name in your chosen region.
-2. Keep bucket private (block public access) for resume storage.
-
-#### Create an IAM User for S3 Access (short)
-1. In IAM, add a user with Programmatic access.
-2. Attach `AmazonS3FullAccess` or a custom policy limited to your bucket.
-3. Copy the Access Key ID and Secret Access Key.
-
-#### Add IAM Credentials to Elastic Beanstalk
-In the EB Console: Configuration → Software → Environment properties. Add:
-- `AWS_ACCESS_KEY_ID`
-- `AWS_SECRET_ACCESS_KEY`
-- `AWS_BUCKET_NAME`
-- `AWS_REGION`
-
-#### Optional S3 Bucket Policy Example
-```
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {"AWS": "arn:aws:iam::YOUR_ACCOUNT_ID:user/resume-builder-user"},
-      "Action": "s3:*",
-      "Resource": [
-        "arn:aws:s3:::my-resume-bucket",
-        "arn:aws:s3:::my-resume-bucket/*"
-      ]
-    }
-  ]
-}
+# Deploy to EB
+eb deploy
 ```
 
-Replace `YOUR_ACCOUNT_ID` and `my-resume-bucket` with your values.
+### 🔟 Cost Optimization
 
-### 6. Elastic Beanstalk Setup
-1. Install the EB CLI or use the AWS Console.
-2. Ensure a `Procfile` exists with:
-```
-web: node server.js
-```
-3. Add `.ebextensions/01_env.config` to set environment variables if desired.
-4. Zip the project (exclude `node_modules` and `.env`) and deploy via EB CLI or Console:
-
-```
-eb init
-eb create resume-builder-env
-eb open
-```
-
-### 7. Environment Variables
-Set these in Elastic Beanstalk or your hosting environment:
-- `AWS_REGION`
-- `AWS_BUCKET_NAME`
-- `AWS_ACCESS_KEY_ID`
-- `AWS_SECRET_ACCESS_KEY`
-- `DB_HOST`
-- `DB_USER`
-- `DB_PASSWORD`
-- `DB_NAME`
-
-### 8. Application Connections
-- **Login/Signup**: User credentials are stored in RDS. The backend checks credentials on login.
-- **Resume Upload**: After login, user uploads a resume. The backend receives the PDF, uploads it to S3, and stores metadata in RDS.
-- **Resume Fetch/Download**: The backend generates a pre-signed S3 URL for secure download.
-- **Frontend/Backend**: Frontend uses fetch/XHR to communicate with backend endpoints for login, upload, and fetch.
-
-### 9. Security Checklist
-- Never commit `.env` or AWS credentials to version control.
-- Use IAM roles for production if possible.
-- Restrict S3 bucket and RDS access to only necessary resources.
-- Use HTTPS for all connections.
-
-### 10. Troubleshooting
-- **DB Connection Issues**: Check RDS security group and credentials.
-- **S3 Upload Issues**: Check IAM permissions and bucket policy.
-- **App Not Starting**: Check `Procfile` and environment variables.
-
-### 11. Useful Links
-- Elastic Beanstalk Docs: https://docs.aws.amazon.com/elasticbeanstalk/
-- S3 Docs: https://docs.aws.amazon.com/s3/
-- RDS Docs: https://docs.aws.amazon.com/rds/
-- EB CLI Install: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3-install.html
+- **Free Tier Resources:**
+  - EC2 t2.micro (750 hours/month)
+  - RDS db.t2.micro (750 hours/month)
+  - S3 5GB storage, 20,000 GET requests
+- **Stop dev environments** when not in use: `eb terminate cloudresume-env`
+- **Use RDS Aurora Serverless** for variable traffic (scales to zero)
 
 ---
 
